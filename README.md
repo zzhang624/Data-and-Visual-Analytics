@@ -1,4 +1,4 @@
-# cse6242-Data-and-Visual-Analytics
+# Data-and-Visual-Analytics
 
 HW1: Collecting & visualizing data, SQLite, D3 warmup, OpenRefine
 HW2: D3 Graphs and Visualization
