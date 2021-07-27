@@ -1,0 +1,1 @@
+When some data values are much larger than the rests in a chart, we can use such nonlinear scales as square root scale and log scale to reduce the large gaps between data points and make data points distribute evenly.

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script type="text/javascript" src="../lib/d3.v5.min.js"></script>
+<style>
+
+@media print {
+    .pagebreak { page-break-before: always; } /* page-break-after works, as well */
+}
+
+
+.lWest {
+    fill: none;
+    stroke: #900C3F;
+    stroke-width: 1.5;
+}
+
+.lSouth {
+    fill: none;
+    stroke: #C70039;
+    stroke-width: 1.5;
+}
+
+.lNortheast {
+    fill: none;
+    stroke: #FF5733;
+    stroke-width: 1.5;
+}
+
+.lMidwest {
+    fill: none;
+    stroke: #FFC300;
+    stroke-width: 1.5;
+}
+
+.dWest {
+    fill: #900C3F;
+}
+
+.dSouth {
+    fill: #C70039;
+}
+
+.dNortheast {
+    fill: #FF5733;
+}
+
+.dMidwest {
+    fill: #FFC300;
+}
+
+</style>
+
+
+<body>
+<script>
+
+
+var width = 600,
+    height = 400;
+
+var svg1 = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var margin = 60;
+var pwidth = svg1.attr("width") - 2*margin;
+var pheight = svg1.attr("height") - 2*margin;
+
+svg1.append("text")
+    .attr("x", 150)
+    .attr("y", margin/2)
+    .text("US Earthquakes by Region 2011-2015")
+    .style("font-size","120%");
+
+var legend = svg1.append("g")
+          .attr("transform", "translate(370,"+margin+")");
+
+legend
+    .append("circle")
+    .attr("r",5)
+    .style("fill","#FFC300")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+5+")")
+    .text("Midwest");
+
+legend
+    .append("circle")
+    .attr("r",5)
+    .style("fill","#FF5733")
+    .attr("transform", "translate("+0+","+15+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+20+")")
+    .text("Northeast");
+
+legend
+    .append("circle")
+    .attr("r",5)
+    .style("fill","#C70039")
+    .attr("transform", "translate("+0+","+30+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+35+")")
+    .text("South");
+
+legend
+    .append("circle")
+    .attr("r",5)
+    .style("fill","#900C3F")
+    .attr("transform", "translate("+0+","+45+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+50+")")
+    .text("West");
+
+var p1 = svg1.append("g")
+           .attr("transform", "translate("+margin+","+margin+")");
+
+p1.append("text")
+  .text("zzhang624")
+  .attr("transform", "translate("+(pwidth/3)+",0)")
+  .attr("fill","blue");
+
+var xscale = d3.scaleTime()
+          .rangeRound([0, pwidth]);
+
+var yscale = d3.scaleLinear()
+          .rangeRound([pheight, 0]);
+
+
+
+///////////////////////////////////
+
+d3.select("body").append("div")
+   .attr("class","pagebreak")
+
+
+var svg2 = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var p2 = svg2.append("g")
+           .attr("transform", "translate("+(margin+30)+","+(margin/3)+")");
+
+var xscale2 = d3.scaleLinear()
+          .rangeRound([0, pwidth]);
+
+var yscale2 = d3.scaleBand()
+          .rangeRound([pheight, 0])
+          .padding(0.2);
+
+///////////////////////////////////
+d3.dsv(",", "state-year-earthquakes.csv").then(function(data) {
+
+    data.forEach(function(d) {
+        d.nyear = new Date(d.year,0,0,0);
+        d.count = +d.count;
+    });
+
+    
+    var region = ["Midwest","Northeast","South","West"];
+//    var year = [new Date(2011,0,0,0),new Date(2012,0,0,0),new Date(2013,0,0,0),new Date(2014,0,0,0),new Date(2015,0,0,0)];
+    var year = ["2011","2012","2013","2014","2015"];
+    var dn = {};
+
+    for (x of region) {
+      dn[x] = [];
+      for (y of year) {
+        var total = 0;
+        var sum = [];
+        data.forEach(function(d) { if (y == d.year && x == d.region) {total = total + d.count ; sum.push({ "state": d.state, "count": d.count });  }}  );
+
+
+////sort
+        sum.sort(function(a, b) {
+         var nameA = a.state.toUpperCase(); // ignore upper and lowercase
+         var nameB = b.state.toUpperCase(); // ignore upper and lowercase
+         if (nameA < nameB) {
+          return -1;
+         }
+         if (nameA > nameB) {
+          return 1;
+         }
+         return 0;
+        });
+        sum.sort(function (a, b) {
+          return a.count - b.count;
+        });
+///   
+        dn[x].push({ "year": new Date(y,0,0,0), "total": total, "sum": sum, "syear": y, "region": x });
+      }
+    }  
+
+
+    var dmax = [];
+    for (x of region) {
+      dmax.push(d3.max(dn[x], function (d) { return d.total;} ));
+    }
+    var dmmax = d3.max(dmax);
+
+    xscale.domain([d3.min(data, function(d) { return d.nyear; }),d3.max(data, function(d) { return d.nyear; })]).nice();    
+
+    yscale.domain([0, dmmax + 500] 
+);
+
+    p1.append("g")
+     .call(d3.axisLeft(yscale));
+
+    p1.append("g")
+     .attr("transform", "translate(0," + pheight + ")")
+     .call(d3.axisBottom(xscale).ticks(d3.timeYear));
+
+    var line = d3.line()
+      .x(function(d) { return xscale(d.year); })
+      .y(function(d) { return yscale(d.total); });
+
+
+    for (x of region) {
+     p1.append("path")
+    .datum(dn[x])
+    .attr("class", "l"+x)
+    .attr("d", line);
+   }
+  
+   for (x of region) {
+   p1.selectAll(".dot")
+    .data(dn[x])
+    .enter().append("circle") // Uses the enter().append() method
+    .attr("class", "d"+x) // Assign a class for styling
+    .attr("cx", function(d) { return xscale(d.year) })
+    .attr("cy", function(d) { return yscale(d.total) })
+    .attr("r", 3)
+      .on("mouseenter", onMouseEnter)
+      .on("mouseleave", onMouseLeave);
+   }
+
+/////////////////////////////////////////
+   function onMouseEnter(d) {
+      d3.select(this).attr("r", 10); 
+
+      xscale2.domain([0,d3.max(d.sum, function(d) { return d.count;}  )]);
+      yscale2.domain(d.sum.map(function(d) {return d.state;}  ));
+
+      p2.append("g")
+       .call(d3.axisLeft(yscale2))
+       .attr("class","temp");
+
+
+      p2.append("g")
+       .attr("transform", "translate(0," + pheight + ")")
+       .call(d3.axisBottom(xscale2))
+       .attr("class","temp");
+
+      p2.selectAll(".bar")
+        .data(d.sum)
+        .enter().append("rect")
+        .attr("x",0)
+        .attr("y", function (d) {
+                return yscale2(d.state);
+        })
+        .attr("height", yscale2.bandwidth())
+        .attr("width", function (d) {
+                return xscale2(d.count);
+        })
+        .attr("fill","blue")
+        .attr("class","temp");
+
+       p2.append("text")
+         .attr("transform", "translate(" + (pwidth/4) + ",0)")
+         .text(d.region+"ern Region Earthquakes "+d.syear)
+         .attr("class","temp");
+   }
+
+   function onMouseLeave(d) {
+      d3.select(this).attr("r", 3);     
+      d3.selectAll(".temp").remove();
+   }
+
+ 
+
+});
+
+</script>
+</body>
+</html>

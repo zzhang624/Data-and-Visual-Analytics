@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<script type="text/javascript" src="../lib/d3.v5.min.js"></script>
+<style>
+
+
+@media print {
+    .pagebreak { page-break-before: always; } /* page-break-after works, as well */
+}
+
+.line1 {
+    fill: none;
+    stroke: #900C3F;
+    stroke-width: 1.5;
+}
+
+.line2 {
+    fill: none;
+    stroke: #C70039;
+    stroke-width: 1.5;
+}
+
+.line3 {
+    fill: none;
+    stroke: #FF5733;
+    stroke-width: 1.5;
+}
+
+.line4 {
+    fill: none;
+    stroke: #FFC300;
+    stroke-width: 1.5;
+}
+
+
+.dot1 {
+    fill: #900C3F;
+}
+
+.dot2 {
+    fill: #C70039;
+}
+
+.dot3 {
+    fill: #FF5733;
+}
+
+.dot4 {
+    fill: #FFC300;
+}
+
+</style>
+<body>
+<script>
+
+var logScale = d3.scaleLinear()
+  .domain([200, 300000])
+  .range([15, 200]);
+
+
+var width = 600,
+    height = 400;
+
+var svg1 = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var margin = 60;
+var pwidth = svg1.attr("width") - 2*margin;
+var pheight = svg1.attr("height") - 2*margin;
+    
+svg1.append("text")
+    .attr("x", 150)
+    .attr("y", margin/2)
+    .text("Earthquake Statistics for 2000-2015")
+    .style("font-size","120%");
+
+svg1.append("text")
+	.attr("transform", "rotate(-90)")
+	.attr("x", -250)
+	.attr("dy", "0.71em")
+        .style("font-size","80%")
+	.text("Num of Earthquakes");
+
+svg1.append("text")
+        .attr("x",width/2 )
+        .attr("y",height-margin/3 )
+        .style("font-size","80%")
+        .text("Year");
+
+var legend = svg1.append("g")
+          .attr("transform", "translate(550,"+margin+")");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#FFC300")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+10+")")
+    .text("5_5.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#FF5733")
+    .attr("transform", "translate("+0+","+15+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+25+")")
+    .text("6_6.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#C70039")
+    .attr("transform", "translate("+0+","+30+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+40+")")
+    .text("7_7.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#900C3F")
+    .attr("transform", "translate("+0+","+45+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+55+")")
+    .text("8.0+");
+
+var p1 = svg1.append("g")
+           .attr("transform", "translate("+margin+","+margin+")");
+
+var xscale = d3.scaleTime()
+          .rangeRound([0, pwidth]);
+
+var yscale = d3.scaleLinear()
+          .rangeRound([pheight, 0]);
+
+d3.dsv(",", "earthquakes.csv").then(function(data) {
+
+    data.forEach(function castDataToInt(d) {
+        d.year = new Date(d.year,0,0,0);
+    });
+
+    xscale.domain([d3.min(data, function(d) { return d.year; }),d3.max(data, function(d) { return d.year; })]);
+
+
+    yscale.domain([0, d3.max(data, function (d) { return d3.max([ Number(d["8.0+"]), Number(d["7_7.9"]), Number(d["6_6.9"]), Number(d["5_5.9"]) ]);  })]
+);
+
+    p1.append("g")
+     .call(d3.axisLeft(yscale));
+
+    p1.append("g")
+     .attr("transform", "translate(0," + pheight + ")")
+     .call(d3.axisBottom(xscale));
+
+    var line1 = d3.line()
+    .x(function(d) { return xscale(d.year); }) 
+    .y(function(d) { return yscale(Number(d["8.0+"])); })  
+    .curve(d3.curveMonotoneX);
+
+    var line2 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return yscale(Number(d["7_7.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    var line3 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return yscale(Number(d["6_6.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    var line4 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return yscale(Number(d["5_5.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    p1.append("path")
+    .datum(data)  
+    .attr("class", "line1")  
+    .attr("d", line1);   
+
+    p1.append("path")
+    .datum(data)  
+    .attr("class", "line2")  
+    .attr("d", line2);   
+
+    p1.append("path")
+    .datum(data)  
+    .attr("class", "line3")  
+    .attr("d", line3);   
+
+    p1.append("path")
+    .datum(data)  
+    .attr("class", "line4")  
+    .attr("d", line4);   
+
+});
+</script>
+
+<div class="pagebreak"> </div>
+
+<script>
+
+var svg2 = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var margin = 60;
+var pwidth = svg2.attr("width") - 2*margin;
+var pheight = svg2.attr("height") - 2*margin;
+    
+svg2.append("text")
+    .attr("x", 100)
+    .attr("y", margin/2)
+    .text("Earthquake Statistics for 2000-2015 with Symbols")
+    .style("font-size","120%");
+
+svg2.append("text")
+	.attr("transform", "rotate(-90)")
+	.attr("x", -250)
+	.attr("dy", "0.71em")
+        .style("font-size","80%")
+	.text("Num of Earthquakes");
+
+svg2.append("text")
+        .attr("x",width/2 )
+        .attr("y",height-margin/3 )
+        .style("font-size","80%")
+        .text("Year");
+
+var legend = svg2.append("g")
+          .attr("transform", "translate(550,"+margin+")");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#FFC300")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+10+")")
+    .text("5_5.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#FF5733")
+    .attr("transform", "translate("+0+","+15+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+25+")")
+    .text("6_6.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#C70039")
+    .attr("transform", "translate("+0+","+30+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+40+")")
+    .text("7_7.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#900C3F")
+    .attr("transform", "translate("+0+","+45+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+55+")")
+    .text("8.0+");
+
+var p2 = svg2.append("g")
+           .attr("transform", "translate("+margin+","+margin+")");
+
+var xscale = d3.scaleTime()
+          .rangeRound([0, pwidth]);
+
+var yscale = d3.scaleLinear()
+          .rangeRound([pheight, 0]);
+
+d3.dsv(",", "earthquakes.csv").then(function(data) {
+
+    data.forEach(function castDataToInt(d) {
+        d.year = new Date(d.year,0,0,0);
+    });
+
+    xscale.domain([d3.min(data, function(d) { return d.year; }),d3.max(data, function(d) { return d.year; })]);
+
+
+    yscale.domain([0, d3.max(data, function (d) { return d3.max([ Number(d["8.0+"]), Number(d["7_7.9"]), Number(d["6_6.9"]), Number(d["5_5.9"]) ]);  })]
+);
+
+    p2.append("g")
+     .call(d3.axisLeft(yscale));
+
+    p2.append("g")
+     .attr("transform", "translate(0," + pheight + ")")
+     .call(d3.axisBottom(xscale));
+
+    var line1 = d3.line()
+    .x(function(d) { return xscale(d.year); }) 
+    .y(function(d) { return yscale(Number(d["8.0+"])); })  
+    .curve(d3.curveMonotoneX);
+
+    var line2 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return yscale(Number(d["7_7.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    var line3 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return yscale(Number(d["6_6.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    var line4 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return yscale(Number(d["5_5.9"])); })               
+    .curve(d3.curveMonotoneX);
+   
+      p2.selectAll(".dot4")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolCircle))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(yscale(Number(d["5_5.9"])))+")"; })
+    .attr("class","dot4");
+
+
+      p2.selectAll(".dot3")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolTriangle))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(yscale(Number(d["6_6.9"])))+")"; })
+    .attr("class","dot3");
+
+
+      p2.selectAll(".dot2")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolDiamond))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(yscale(Number(d["7_7.9"])))+")"; })
+    .attr("class","dot2");
+
+
+      p2.selectAll(".dot1")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolSquare))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(yscale(Number(d["8.0+"])))+")"; })
+    .attr("class","dot1");
+
+    p2.append("path")
+    .datum(data)  
+    .attr("class", "line1")  
+    .attr("d", line1);   
+
+    p2.append("path")
+    .datum(data)  
+    .attr("class", "line2")  
+    .attr("d", line2);   
+
+    p2.append("path")
+    .datum(data)  
+    .attr("class", "line3")  
+    .attr("d", line3);   
+
+    p2.append("path")
+    .datum(data)  
+    .attr("class", "line4")  
+    .attr("d", line4);   
+
+});
+
+</script>
+<div class="pagebreak"> </div>
+<script>
+var svg3 = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var margin = 60;
+var pwidth = svg3.attr("width") - 2*margin;
+var pheight = svg3.attr("height") - 2*margin;
+    
+svg3.append("text")
+    .attr("x", 80)
+    .attr("y", margin/2)
+    .text("Earthquake statistics for 2000-2015 (Square root Scale)")
+    .style("font-size","120%");
+
+svg3.append("text")
+	.attr("transform", "rotate(-90)")
+	.attr("x", -250)
+	.attr("dy", "0.71em")
+        .style("font-size","80%")
+	.text("Num of Earthquakes");
+
+svg3.append("text")
+        .attr("x",width/2 )
+        .attr("y",height-margin/3 )
+        .style("font-size","80%")
+        .text("Year");
+
+var legend = svg3.append("g")
+          .attr("transform", "translate(550,"+margin+")");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#FFC300")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+10+")")
+    .text("5_5.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#FF5733")
+    .attr("transform", "translate("+0+","+15+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+25+")")
+    .text("6_6.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#C70039")
+    .attr("transform", "translate("+0+","+30+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+40+")")
+    .text("7_7.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#900C3F")
+    .attr("transform", "translate("+0+","+45+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+55+")")
+    .text("8.0+");
+
+var p3 = svg3.append("g")
+           .attr("transform", "translate("+margin+","+margin+")");
+
+var xscale = d3.scaleTime()
+          .rangeRound([0, pwidth]);
+
+var ysqr = d3.scaleSqrt()
+          .rangeRound([pheight, 0]);
+
+d3.dsv(",", "earthquakes.csv").then(function(data) {
+
+    data.forEach(function castDataToInt(d) {
+        d.year = new Date(d.year,0,0,0);
+    });
+
+    xscale.domain([d3.min(data, function(d) { return d.year; }),d3.max(data, function(d) { return d.year; })]);
+
+
+    ysqr.domain([0, d3.max(data, function (d) { return d3.max([ Number(d["8.0+"]), Number(d["7_7.9"]), Number(d["6_6.9"]), Number(d["5_5.9"]) ]);  })]
+);
+
+    p3.append("g")
+     .call(d3.axisLeft(ysqr));
+
+    p3.append("g")
+     .attr("transform", "translate(0," + pheight + ")")
+     .call(d3.axisBottom(xscale));
+
+    var line1 = d3.line()
+    .x(function(d) { return xscale(d.year); }) 
+    .y(function(d) { return ysqr(Number(d["8.0+"])); })  
+    .curve(d3.curveMonotoneX);
+
+    var line2 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return ysqr(Number(d["7_7.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    var line3 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return ysqr(Number(d["6_6.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    var line4 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return ysqr(Number(d["5_5.9"])); })               
+    .curve(d3.curveMonotoneX);
+   
+      p3.selectAll(".dot4")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolCircle))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(ysqr(Number(d["5_5.9"])))+")"; })
+    .attr("class","dot4");
+
+
+      p3.selectAll(".dot3")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolTriangle))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(ysqr(Number(d["6_6.9"])))+")"; })
+    .attr("class","dot3");
+
+
+      p3.selectAll(".dot2")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolDiamond))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(ysqr(Number(d["7_7.9"])))+")"; })
+    .attr("class","dot2");
+
+
+      p3.selectAll(".dot1")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolSquare))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(ysqr(Number(d["8.0+"])))+")"; })
+    .attr("class","dot1");
+
+    p3.append("path")
+    .datum(data)  
+    .attr("class", "line1")  
+    .attr("d", line1);   
+
+    p3.append("path")
+    .datum(data)  
+    .attr("class", "line2")  
+    .attr("d", line2);   
+
+    p3.append("path")
+    .datum(data)  
+    .attr("class", "line3")  
+    .attr("d", line3);   
+
+    p3.append("path")
+    .datum(data)  
+    .attr("class", "line4")  
+    .attr("d", line4);   
+
+});
+
+</script>
+<div class="pagebreak"> </div>
+<script>
+
+var svg4 = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var margin = 60;
+var pwidth = svg4.attr("width") - 2*margin;
+var pheight = svg4.attr("height") - 2*margin;
+    
+svg4.append("text")
+    .attr("x", 100)
+    .attr("y", margin/2)
+    .text("Earthquake statistics for 2000-2015 (Log Scale)")
+    .style("font-size","120%");
+
+svg4.append("text")
+	.attr("transform", "rotate(-90)")
+	.attr("x", -250)
+	.attr("dy", "0.71em")
+        .style("font-size","80%")
+	.text("Num of Earthquakes");
+
+svg4.append("text")
+        .attr("x",width/2 )
+        .attr("y",height-margin/3 )
+        .style("font-size","80%")
+        .text("Year");
+
+svg4.append("text")
+        .attr("x",pwidth )
+        .attr("y",height-margin/3 )
+        .style("font-size","70%")
+        .text("zzhang624");
+
+var legend = svg4.append("g")
+          .attr("transform", "translate(550,"+margin+")");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#FFC300")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+10+")")
+    .text("5_5.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#FF5733")
+    .attr("transform", "translate("+0+","+15+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+25+")")
+    .text("6_6.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#C70039")
+    .attr("transform", "translate("+0+","+30+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+40+")")
+    .text("7_7.9");
+
+legend
+    .append("rect")
+    .attr("width",10)
+    .attr("height",10)
+    .style("fill","#900C3F")
+    .attr("transform", "translate("+0+","+45+")")
+legend
+    .append("text")
+    .attr("transform", "translate("+11+","+55+")")
+    .text("8.0+");
+
+var p4 = svg4.append("g")
+           .attr("transform", "translate("+margin+","+margin+")");
+
+var xscale = d3.scaleTime()
+          .rangeRound([0, pwidth]);
+
+var ylog = d3.scaleLog().clamp(true)
+          .rangeRound([pheight, 0]);
+
+d3.dsv(",", "earthquakes.csv").then(function(data) {
+
+    data.forEach(function castDataToInt(d) {
+        d.year = new Date(d.year,0,0,0);
+    });
+
+    xscale.domain([d3.min(data, function(d) { return d.year; }),d3.max(data, function(d) { return d.year; })]);
+
+
+    ylog.domain([0.9, d3.max(data, function (d) { return d3.max([ Number(d["8.0+"]), Number(d["7_7.9"]), Number(d["6_6.9"]), Number(d["5_5.9"]) ]);  })]
+);
+
+    p4.append("g")
+     .call(d3.axisLeft(ylog));
+
+    p4.append("g")
+     .attr("transform", "translate(0," + pheight + ")")
+     .call(d3.axisBottom(xscale));
+
+    var line1 = d3.line()
+    .x(function(d) { return xscale(d.year); }) 
+    .y(function(d) { return ylog(Number(d["8.0+"])); })  
+    .curve(d3.curveMonotoneX);
+
+    var line2 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return ylog(Number(d["7_7.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    var line3 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return ylog(Number(d["6_6.9"])); })               
+    .curve(d3.curveMonotoneX);
+
+    var line4 = d3.line()
+    .x(function(d) { return xscale(d.year); })                                                   
+    .y(function(d) { return ylog(Number(d["5_5.9"])); })               
+    .curve(d3.curveMonotoneX);
+   
+      p4.selectAll(".dot4")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolCircle))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(ylog(Number(d["5_5.9"])))+")"; })
+    .attr("class","dot4");
+
+
+      p4.selectAll(".dot3")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolTriangle))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(ylog(Number(d["6_6.9"])))+")"; })
+    .attr("class","dot3");
+
+
+      p4.selectAll(".dot2")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolDiamond))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(ylog(Number(d["7_7.9"])))+")"; })
+    .attr("class","dot2");
+
+
+      p4.selectAll(".dot1")
+    .data(data)
+    .enter().append("path") // Uses the enter().append() method
+    .attr( "d", d3.symbol().size( function(d) { return logScale(Number(d["Estimated Deaths"])) ;  } ).type(d3.symbolSquare))
+    .attr('transform',function(d){ return "translate("+(xscale(d.year))+","+(ylog(Number(d["8.0+"])))+")"; })
+    .attr("class","dot1");
+
+    p4.append("path")
+    .datum(data)  
+    .attr("class", "line1")  
+    .attr("d", line1);   
+
+    p4.append("path")
+    .datum(data)  
+    .attr("class", "line2")  
+    .attr("d", line2);   
+
+    p4.append("path")
+    .datum(data)  
+    .attr("class", "line3")  
+    .attr("d", line3);   
+
+    p4.append("path")
+    .datum(data)  
+    .attr("class", "line4")  
+    .attr("d", line4);   
+
+});
+
+
+</script>
+</body>
+</html>

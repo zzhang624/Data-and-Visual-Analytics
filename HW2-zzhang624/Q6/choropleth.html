@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+
+.d3-tip {
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+/* Creates a small triangle extender for the tooltip */
+.d3-tip:after {
+  box-sizing: border-box;
+  font-size: 10px;
+  width: 100%;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+/* Style northward tooltips differently */
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+
+.counties {
+  fill: none;
+}
+
+.states {
+
+  fill: none;
+  stroke: #060606;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+</style>
+<script type="text/javascript" src="../lib/d3.v5.min.js"></script>
+<script type="text/javascript" src="../lib/topojson.v2.min.js"></script>
+<script type="text/javascript" src="../lib/d3-simple-slider.min.js"></script>
+<script type="text/javascript" src="../lib/d3-tip.min.js"></script>
+
+<body>
+  <div class="row align-items-center">
+    <div class="col-sm-2"><p id="value-step"></p></div>
+    <div class="col-sm"><div id="slider-step"></div></div>
+  </div>
+
+<script>
+
+var margin = {top: 50, right: 200, bottom: 50, left: 60},
+    width = 1220 - margin.left - margin.right,
+    height = 700 - margin.top - margin.bottom;
+  
+ var sliderStep = d3
+    .sliderBottom()
+    .min(2010)
+    .max(2015)
+    .width(300)
+    .tickFormat(d3.format('1'))
+    .ticks(5)
+    .step(1)
+    .on('onchange', val => {
+////////////////////////////////from here to next"/////////" is a function to delete old year and draw new year
+var earthquake = d3.map();
+var projection = d3
+        .geoAlbersUsa()
+        .translate([width / 2, height / 2])
+        .scale([1000]);
+var path = d3.geoPath().projection(projection);
+
+var slog = d3.scaleLog()
+           .range([0, 8]);
+
+var color = d3.scaleThreshold()
+    .domain(d3.range(0, 8))
+    .range(d3.schemeBlues[9]);
+
+d3.selectAll(".temp").remove();
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    nn = earthquake.get(d.id);
+    try{return "<text style='color:white'>State:" + nn.state + "<br>Region:"+ nn.region + "<br>Year:"+ year+ "<br>Earthquakes:"+ nn.num+ "</text>"; } 
+    catch(err) {  return "<text style='color:white'> unknow data </text>";}
+  })
+
+  gStep.call(sliderStep);
+
+
+svg.call(tip);
+var earthquake_array = [];
+var promises = [
+  d3.json("states-10m.json"),
+  d3.csv("state-earthquakes.csv", function(d) { earthquake.set(abbrState(d.States,"id"), {"num":+d[val],"state":d.States,"region":d.Region});earthquake_array.push(+d[val]); })
+]
+
+Promise.all(promises).then(ready)
+function ready([us]) {
+
+
+    slog.domain([1,d3.max(earthquake_array)]);
+
+ svg.append("text")
+    .text("Earthquake Frequency")
+    .attr("transform", "translate("+(width)+","+0+")").attr("class","temp")
+      
+  var legend = svg.selectAll(".legend")
+      .data(d3.schemeBlues[9])
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 23 +  ")"; }).attr("class","temp");
+
+  legend.append("circle")
+      .attr("transform", "translate("+(width+35)+","+20+")")
+      .attr("r", 10)
+      .style("fill",function(d) {return d;}).attr("class","temp");
+
+  var color_text = [];
+   for (i in d3.range(0,9)) {
+     color_text.push(Math.ceil(slog.invert(i)));
+   }
+ 
+  
+  legend.append("text")
+      .attr("x", width + 50)
+      .attr("y", 25)
+      .text(function(d, i) { if (i==8) {return " < or =" + (color_text[i]);}  return  " < " + (color_text[i]); })
+      .attr("class","temp")
+
+  year = val
+   svg.append("g")
+      .attr("class", "counties")
+    .selectAll("path")
+    .data(topojson.feature(us, us.objects.states).features)
+    .enter().append("path")
+      .attr("fill", function(d) { nn = earthquake.get(d.id);  try{return color(slog(nn.num));} catch(err) {  return color(slog(0));}  })
+      .attr("d", path)
+      .attr("class","temp")
+       .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+
+  svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+      .attr("class", "states temp")
+      .attr("d", path);
+
+  svg.append("path")
+      .datum(topojson.mesh(us, us.objects.nation))
+      .attr("class", "states temp")
+      .attr("d", path);
+
+}
+/////////////////
+  
+    });
+
+  var gStep = d3
+    .select('div#slider-step')
+    .append('svg')
+    .attr('width', 500)
+    .attr('height', 100)
+    .append('g')
+    .attr('transform', 'translate(60,20)');
+
+
+
+  gStep.call(sliderStep);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+   var year = "2010";
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    nn = earthquake.get(d.id);
+    try{return "<text style='color:white'>State:" + nn.state + "<br>Region:"+ nn.region + "<br>Year:"+ year+ "<br>Earthquakes:"+ nn.num+ "</text>"; } 
+    catch(err) {  return "<text style='color:white'> unknow data </text>";}
+  })
+
+var earthquake = d3.map();
+var projection = d3
+        .geoAlbersUsa()
+        .translate([width / 2, height / 2])
+        .scale([1000]);
+var path = d3.geoPath().projection(projection);
+// var path = d3.geoPath();
+
+//  var projection = d3.geo.mercator();
+//     var path = d3.geoPath()
+//          .projection(projection);
+
+
+var slog = d3.scaleLog()
+           .range([0, 8]);
+
+var color = d3.scaleThreshold()
+    .domain(d3.range(0, 8))
+    .range(d3.schemeBlues[9]);
+
+
+svg.call(tip);
+
+var earthquake_array = [];
+var promises = [
+  d3.json("states-10m.json"),
+//  d3.json("https://d3js.org/us-10m.v1.json"),
+  d3.csv("state-earthquakes.csv", function(d) { earthquake.set(abbrState(d.States,"id"), {"num":+d["2010"],"state":d.States,"region":d.Region});earthquake_array.push(+d["2010"]); })
+]
+Promise.all(promises).then(ready)
+function ready([us]) {
+    slog.domain([1,d3.max(earthquake_array)]);
+
+  var  test = "Earthquake Frequency"
+
+ svg.append("text")
+    .text(test)
+    .attr("transform", "translate("+(width)+","+0+")").attr("class","temp")
+      
+  var legend = svg.selectAll(".legend")
+      .data(d3.schemeBlues[9])
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 23 +  ")"; }).attr("class","temp");
+
+  legend.append("circle")
+      .attr("transform", "translate("+(width+35)+","+20+")")
+      .attr("r", 10)
+      .style("fill",function(d) {return d;}).attr("class","temp");
+
+  var color_text = [];
+   for (i in d3.range(0,9)) {
+     color_text.push(Math.ceil(slog.invert(i)));
+   }
+ 
+  
+  legend.append("text")
+      .attr("x", width + 50)
+      .attr("y", 25)
+      .text(function(d, i) { if (i==8) {return " < or =" + (color_text[i]);}  return  " < " + (color_text[i]); })
+      .attr("class","temp")
+
+
+  svg.append("text")
+      .attr("x", width - 100)
+      .attr("y", height + 40)
+      .text("zzhang624");
+
+
+   svg.append("g")
+      .attr("class", "counties")
+    .selectAll("path")
+    .data(topojson.feature(us, us.objects.states).features)
+    .enter().append("path")
+      .attr("fill", function(d) { nn = earthquake.get(d.id);  try{return color(slog(nn.num));} catch(err) {  return color(slog(0));}  })
+      .attr("d", path)
+      .attr("class","temp")
+       .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+
+  svg.append("path")
+      .datum(topojson.mesh(us, us.objects.states, (a, b) => a !== b))
+      .attr("class", "states temp")
+      .attr("d", path)
+
+  svg.append("path")
+      .datum(topojson.feature(us, us.objects.nation))
+      .attr("class", "states temp")
+      .attr("d", path)
+
+//  svg.append("path")
+//      .attr("class", "states temp")
+//      .attr("d", path(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; })));
+
+//  svg.append("g")
+//      .attr("class", "states")
+//    .selectAll("path")
+//    .data(topojson.feature(us, us.objects.states).features)
+//    .enter().append("path")
+//      .attr("fill", function(d) { console.log(nn = earthquake.get(d.id));  try{return color(slog(nn.num));} catch(err) {  return color(slog(0));}  })
+//      .attr("d", path);
+
+}
+
+/////////////////////////I have a mistake at baginning, so I need the following function to convert data.
+function abbrState(input, to){
+    
+    var states = [
+        ['Arizona', '04'],
+        ['Alabama', '01'],
+        ['Alaska', '02'],
+        ['Arkansas', '05'],
+        ['California', '06'],
+        ['Colorado', '08'],
+        ['Connecticut', '09'],
+        ['Delaware', '10'],
+        ['Florida', '12'],
+        ['Georgia', '13'],
+        ['Hawaii', '15'],
+        ['Idaho', '16'],
+        ['Illinois', '17'],
+        ['Indiana', '18'],
+        ['Iowa', '19'],
+        ['Kansas', '20'],
+        ['Kentucky', '21'],
+        ['Louisiana', '22'],
+        ['Maine', '23'],
+        ['Maryland', '24'],
+        ['Massachusetts', '25'],
+        ['Michigan', '26'],
+        ['Minnesota', '27'],
+        ['Mississippi', '28'],
+        ['Missouri', '29'],
+        ['Montana', '30'],
+        ['Nebraska', '31'],
+        ['Nevada', '32'],
+        ['New Hampshire', '33'],
+        ['New Jersey', '34'],
+        ['New Mexico', '35'],
+        ['New York', '36'],
+        ['North Carolina', '37'],
+        ['North Dakota', '38'],
+        ['Ohio', '39'],
+        ['Oklahoma', '40'],
+        ['Oregon', '41'],
+        ['Pennsylvania', '42'],
+        ['Rhode Island', '44'],
+        ['South Carolina', '45'],
+        ['South Dakota', '46'],
+        ['Tennessee', '47'],
+        ['Texas', '48'],
+        ['Utah', '49'],
+        ['Vermont', '50'],
+        ['Virginia', '51'],
+        ['Washington', '53'],
+        ['West Virginia', '54'],
+        ['Wisconsin', '55'],
+        ['Wyoming', '56'],
+    ];
+
+    if (to == 'id'){
+        input = input.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+        for(i = 0; i < states.length; i++){
+            if(states[i][0] == input){
+                return(states[i][1]);
+            }
+        }    
+    } 
+}
+
+</script>
+</body>
+</html>

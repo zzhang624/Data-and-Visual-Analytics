@@ -1,0 +1,6 @@
+1.What is the main reason to use a random forest versus a decision tree? (<= 50 words)
+A decision tree has the risk of overfitting and gets high variance. Random Forests aggregate many decision trees, are trained on different subsets of the data, and use a random subset of features to limit overfitting and reduce variance.
+2.How long did your random forest take to run? (in seconds)
+132 seconds.
+3.What accuracy (to two decimal places, xx.xx%) were you able to obtain?
+73.06%
